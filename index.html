@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg: #0f172a;           /* slate-900 */
+      --panel: #111827cc;      /* neutral panel with alpha */
+      --text: #e5e7eb;         /* slate-200 */
+      --muted: #a1a1aa;        /* gray-400 */
+      --accent: #6366f1;       /* indigo-500 */
+      --accent-2: #22c55e;     /* green-500 */
+      --danger: #ef4444;       /* red-500 */
+      --warning: #f59e0b;      /* amber-500 */
+      --glass: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+      --ring: rgba(99,102,241,0.45);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, #1e293b 20%, var(--bg)),
+        radial-gradient(900px 500px at 80% 30%, #0ea5e9 5%, transparent 55%),
+        radial-gradient(900px 500px at 20% 80%, #6366f1 6%, transparent 55%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    header {
+      padding: 28px 20px 6px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 0.2px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 22px auto 60px;
+      padding: 0 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--glass), transparent);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: saturate(1.2) blur(10px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .card h2 {
+      margin: 2px 0 12px;
+      font-size: 1.25rem;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .input-row { grid-template-columns: 1fr; }
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    input, select {
+      width: 100%;
+      background: #0b1220;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    .row { margin-bottom: 12px; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 720px) {
+      .actions { grid-template-columns: 1fr; }
+    }
+
+    button {
+      background: #1f2937;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    button:hover {
+      background: #2a3444;
+      border-color: var(--accent);
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary { background: var(--accent); border-color: var(--accent); }
+    .btn-success { background: var(--accent-2); border-color: var(--accent-2); }
+    .btn-danger  { background: var(--danger); border-color: var(--danger); }
+    .btn-warning { background: var(--warning); border-color: var(--warning); }
+
+    .table-wrap {
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #0b1220;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 0.92rem;
+    }
+    th {
+      background: #101827;
+      color: #cbd5e1;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tbody tr:hover { background: #0f172a; }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+      background: #0b1220;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 22px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      font-size: 0.95rem;
+      display: none;
+      z-index: 9999;
+    }
+    .toast.show { display: block; }
+
+    .flex {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .muted { color: var(--muted); }
+    .hr { height: 1px; background: var(--border); border: 0; margin: 14px 0; }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 22px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Student Management System</h1>
+    <p>Manage students, marks, grades, and top performers with a clean, responsive interface.</p>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <!-- Left: Add / Edit -->
+      <section class="card">
+        <h2>Add or update student</h2>
+        <p class="subtitle">Enter details and marks. IDs must be numeric; marks should be between 0 and 100.</p>
+
+        <div class="row">
+          <div class="input-row">
+            <div>
+              <label>Student ID</label>
+              <input id="sid" type="text" placeholder="e.g., 101" />
+            </div>
+            <div>
+              <label>Name</label>
+              <input id="name" type="text" placeholder="e.g., Asha Singh" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-row">
+            <div>
+              <label>Age</label>
+              <input id="age" type="number" min="0" placeholder="e.g., 18" />
+            </div>
+            <div>
+              <label>Course</label>
+              <input id="course" type="text" placeholder="e.g., BSc Computer Science" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-row">
+            <div>
+              <label>Math</label>
+              <input id="math" type="number" min="0" max="100" placeholder="0 - 100" />
+            </div>
+            <div>
+              <label>Science</label>
+              <input id="science" type="number" min="0" max="100" placeholder="0 - 100" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-row">
+            <div>
+              <label>English</label>
+              <input id="english" type="number" min="0" max="100" placeholder="0 - 100" />
+            </div>
+            <div>
+              <label>Quick actions</label>
+              <div class="flex">
+                <button class="btn-primary" onclick="addOrUpdateStudent()">Add Student</button>
+                <button onclick="clearForm()">Clear</button>
+                <span class="badge muted">Auto-saves to localStorage</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Operations -->
+      <section class="card">
+        <h2>Operations</h2>
+        <p class="subtitle">View details, marks, averages, grades, and top performer.</p>
+
+        <div class="row">
+          <label>Enter a Student ID to operate</label>
+          <input id="op-sid" type="text" placeholder="e.g., 101" />
+        </div>
+
+        <div class="actions">
+          <button onclick="viewStudent()">View Student</button>
+          <button onclick="seeMarks()">See Marks</button>
+          <button onclick="calcAverage()">Calculate Average</button>
+          <button onclick="assignGrade()">Assign Grade</button>
+          <button onclick="topPerformer()">Top Performer</button>
+          <button class="btn-warning" onclick="renderAll()">View All Students</button>
+          <button class="btn-success" onclick="downloadJSON()">Save / Export JSON</button>
+          <button class="btn-danger" onclick="exitApp()">Exit</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="flex">
+          <input id="import-file" type="file" accept="application/json" />
+          <button onclick="importJSON()">Import JSON</button>
+          <span class="muted">Use students_data.json for parity with your Python script.</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- Table -->
+    <section class="card" style="margin-top: 16px;">
+      <h2>All students</h2>
+      <p class="subtitle">Students currently in the system.</p>
+      <div class="table-wrap">
+        <table id="students-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Course</th>
+              <th>Math</th>
+              <th>Science</th>
+              <th>English</th>
+              <th>Average</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footer">Made with care. Validate, persist, and export—your data stays yours.</p>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // In-memory store mirrors your Python dict structure
+    let students = {};
+
+    // Load from localStorage on start
+    (function init() {
+      const raw = localStorage.getItem('students_data');
+      if (raw) {
+        try { students = JSON.parse(raw) || {}; }
+        catch { students = {}; }
+      }
+      renderAll();
+    })();
+
+    function showToast(msg, tone = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.borderColor =
+        tone === 'success' ? getComputedStyle(document.documentElement).getPropertyValue('--accent-2') :
+        tone === 'danger'  ? getComputedStyle(document.documentElement).getPropertyValue('--danger') :
+        tone === 'warning' ? getComputedStyle(document.documentElement).getPropertyValue('--warning') :
+        getComputedStyle(document.documentElement).getPropertyValue('--border');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function persist() {
+      localStorage.setItem('students_data', JSON.stringify(students));
+    }
+
+    // Validation helpers
+    function isValidId(id) { return /^\d+$/.test(id); }
+    function isValidAge(age) { return Number.isFinite(age) && age >= 0; }
+    function isValidMark(m) { return Number.isFinite(m) && m >= 0 && m <= 100; }
+
+    // Core operations (parity with Python functions)
+    function addOrUpdateStudent() {
+      const sid = document.getElementById('sid').value.trim();
+      const name = document.getElementById('name').value.trim();
+      const age = Number(document.getElementById('age').value.trim());
+      const course = document.getElementById('course').value.trim();
+      const m = Number(document.getElementById('math').value.trim());
+      const s = Number(document.getElementById('science').value.trim());
+      const e = Number(document.getElementById('english').value.trim());
+
+      if (!isValidId(sid)) return showToast('Invalid ID. Please enter a numeric value.', 'warning');
+      if (!name) return showToast('Name is required.', 'warning');
+      if (!isValidAge(age)) return showToast('Invalid Age. Please enter a non-negative numeric value.', 'warning');
+      if (!course) return showToast('Course is required.', 'warning');
+      if (!isValidMark(m) || !isValidMark(s) || !isValidMark(e)) return showToast('Marks must be numeric between 0 and 100.', 'warning');
+
+      students[sid] = {
+        name, age, course,
+        marks: { Math: m, Science: s, English: e }
+      };
+      persist();
+      renderAll();
+      showToast(`Student ${name} added/updated successfully.`, 'success');
+    }
+
+    function clearForm() {
+      ['sid','name','age','course','math','science','english'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = '';
+      });
+      showToast('Form cleared.');
+    }
+
+    function viewStudent() {
+      const sid = document.getElementById('op-sid').value.trim();
+      const details = students[sid];
+      if (!details) return showToast('Student not found.', 'warning');
+
+      const msg = `Student ID: ${sid}
+Name: ${details.name}
+Age: ${details.age}
+Course: ${details.course}`;
+      alert(msg);
+    }
+
+    function seeMarks() {
+      const sid = document.getElementById('op-sid').value.trim();
+      const details = students[sid];
+      if (!details) return showToast('Student not found.', 'warning');
+
+      const m = details.marks?.Math ?? '-';
+      const s = details.marks?.Science ?? '-';
+      const e = details.marks?.English ?? '-';
+      alert(`Marks for Student ID ${sid}\nMath: ${m}\nScience: ${s}\nEnglish: ${e}`);
+    }
+
+    function calcAvg(m, s, e) {
+      return (Number(m) + Number(s) + Number(e)) / 3;
+    }
+
+    function assignGradeFromAverage(avg) {
+      if (avg > 100 || avg < 0) throw new Error('Average marks should be between 0 and 100.');
+      if (avg >= 90) return 'A';
+      if (avg >= 75) return 'B';
+      if (avg >= 60) return 'C';
+      return 'Fail';
+    }
+
+    function calcAverage() {
+      const sid = document.getElementById('op-sid').value.trim();
+      const details = students[sid];
+      if (!details) return showToast('Student not found.', 'warning');
+      const { Math: m, Science: s, English: e } = details.marks;
+      const avg = calcAvg(m, s, e);
+      showToast(`Average for ${sid}: ${avg.toFixed(2)}`, 'info');
+    }
+
+    function assignGrade() {
+      const sid = document.getElementById('op-sid').value.trim();
+      const details = students[sid];
+      if (!details) return showToast('Student not found.', 'warning');
+      const { Math: m, Science: s, English: e } = details.marks;
+      const avg = calcAvg(m, s, e);
+      try {
+        const grade = assignGradeFromAverage(avg);
+        showToast(`Average: ${avg.toFixed(2)} | Grade: ${grade}`, 'success');
+      } catch (err) {
+        showToast(err.message, 'danger');
+      }
+    }
+
+    function topPerformer() {
+      const keys = Object.keys(students);
+      if (!keys.length) return showToast('No students found.', 'warning');
+      let topSid = null, topName = null, highest = -1;
+      for (const sid of keys) {
+        const d = students[sid];
+        const { Math: m, Science: s, English: e } = d.marks;
+        const avg = calcAvg(m, s, e);
+        if (avg > highest) {
+          highest = avg;
+          topSid = sid;
+          topName = d.name;
+        }
+      }
+      showToast(`Top: ${topName} (ID: ${topSid}) | Avg: ${highest.toFixed(2)}`, 'success');
+    }
+
+    function renderAll() {
+      const tbody = document.getElementById('students-tbody');
+      tbody.innerHTML = '';
+      const keys = Object.keys(students);
+      if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="muted">No students found.</td></tr>';
+        return;
+      }
+      for (const sid of keys) {
+        const d = students[sid];
+        const { Math: m, Science: s, English: e } = d.marks;
+        const avg = calcAvg(m, s, e);
+        let grade = '';
+        try { grade = assignGradeFromAverage(avg); } catch { grade = '-'; }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${sid}</td>
+          <td>${escapeHtml(d.name)}</td>
+          <td>${d.age}</td>
+          <td>${escapeHtml(d.course)}</td>
+          <td>${m}</td>
+          <td>${s}</td>
+          <td>${e}</td>
+          <td>${avg.toFixed(2)}</td>
+          <td>${grade}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    // Export/Import
+    function downloadJSON() {
+      const dataStr = JSON.stringify(students, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'students_data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Exported students_data.json', 'success');
+    }
+
+    function importJSON() {
+      const fileInput = document.getElementById('import-file');
+      const file = fileInput.files?.[0];
+      if (!file) return showToast('Please select a JSON file to import.', 'warning');
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const obj = JSON.parse(e.target.result);
+          if (typeof obj !== 'object' || obj === null) throw new Error('Invalid JSON structure.');
+          students = obj;
+          persist();
+          renderAll();
+          showToast('Import successful.', 'success');
+        } catch (err) {
+          showToast('Import failed: ' + err.message, 'danger');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Exit: mimic saving and provide a gentle end-state
+    function exitApp() {
+      persist();
+      showToast('Data saved. You can close the tab.', 'info');
+    }
+
+    // Optional: backend integration hooks (Flask/FastAPI)
+    // Replace local operations with fetch calls to your Python backend when ready.
+    /*
+    async function addStudentBackend(payload) {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Failed to add student');
+      const data = await res.json();
+      return data;
+    }
+    */
+  </script>
+</body>
+</html>
