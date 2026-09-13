@@ -1,0 +1,12 @@
+{
+    "01": {
+        "name": "yash",
+        "age": 20,
+        "course": "cs",
+        "marks": {
+            "Math": 90,
+            "Science": 78,
+            "English": 88
+        }
+    }
+}
