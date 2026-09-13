@@ -36,13 +36,13 @@ Records use a dictionary keyed by student ID:
 
 ```json
 {
-	"01": {
-		"name": "Yash",
-		"age": 20,
+	"100": {
+		"name": "Demo Student",
+		"age": 18,
 		"course": "Computer Science",
 		"marks": {
-			"Math": 90,
-			"Science": 78,
+			"Math": 85,
+			"Science": 82,
 			"English": 88
 		}
 	}
