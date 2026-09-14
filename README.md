@@ -9,6 +9,8 @@ Atlas Student Records is a local-first student management system with a polished
 - Search by student name, course, or ID
 - Sort by name, average, or ID
 - Filter by grade and see class-level statistics
+- Track attendance and identify students below the 75% support threshold
+- Filter the directory by healthy or at-risk attendance
 - View detailed student profiles in a modal dialog
 - Import and export compatible JSON files
 - Persist browser changes in localStorage
@@ -40,6 +42,7 @@ Records use a dictionary keyed by student ID:
 		"name": "Demo Student",
 		"age": 18,
 		"course": "Computer Science",
+		"attendance": 92,
 		"marks": {
 			"Math": 85,
 			"Science": 82,

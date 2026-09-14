@@ -22,7 +22,7 @@ def save_data(filename, data):
 students_dict = load_data()
 
 
-def add_student(student_id, name, age, course, m_marks, s_marks, e_marks):
+def add_student(student_id, name, age, course, m_marks, s_marks, e_marks, attendance=100):
     if not str(student_id).isdigit():
         raise ValueError("Student ID must be numeric.")
     if not name.strip() or not course.strip():
@@ -32,10 +32,13 @@ def add_student(student_id, name, age, course, m_marks, s_marks, e_marks):
     marks = (m_marks, s_marks, e_marks)
     if any(mark < 0 or mark > 100 for mark in marks):
         raise ValueError("Marks must be between 0 and 100.")
+    if attendance < 0 or attendance > 100:
+        raise ValueError("Attendance must be between 0 and 100.")
     students_dict[str(student_id)] = {
         "name": name.strip(),
         "age": age,
         "course": course.strip(),
+        "attendance": attendance,
         "marks": {"Math": m_marks, "Science": s_marks, "English": e_marks},
     }
 
@@ -92,7 +95,7 @@ def run_cli():
     while True:
         choice = input(
             "\n1 Add student\n2 View student\n3 See marks\n4 View all students\n"
-            "5 Calculate average\n6 Assign grade\n7 Top performer\n8 Exit\nChoose: "
+            "5 Calculate average\n6 Assign grade\n7 Top performer\n8 Attendance watchlist\n9 Exit\nChoose: "
         ).strip()
         if choice == "1":
             try:
@@ -101,7 +104,8 @@ def run_cli():
                 age = int(input("Enter Student Age: "))
                 course = input("Enter Student Course: ")
                 marks = [_read_mark(subject) for subject in ("Math", "Science", "English")]
-                add_student(student_id, name, age, course, *marks)
+                attendance = _read_mark("Attendance percentage")
+                add_student(student_id, name, age, course, *marks, attendance)
                 save_data(DATA_FILE, students_dict)
                 print("Student saved successfully.")
             except ValueError as error:
@@ -114,7 +118,8 @@ def run_cli():
                 continue
             marks = student["marks"]
             if choice == "2":
-                print(f"{student['name']} | Age {student['age']} | {student['course']}")
+                attendance = student.get("attendance", 100)
+                print(f"{student['name']} | Age {student['age']} | {student['course']} | Attendance {attendance}%")
             elif choice == "3":
                 print(" | ".join(f"{subject}: {mark}" for subject, mark in marks.items()))
             else:
@@ -127,11 +132,22 @@ def run_cli():
             result = top_performer()
             print(f"Top performer: {result[1]} (#{result[0]}) | {result[2]:.2f}") if result else print("No students found.")
         elif choice == "8":
+            watchlist = [
+                (student_id, student)
+                for student_id, student in students_dict.items()
+                if student.get("attendance", 100) < 75
+            ]
+            if watchlist:
+                for student_id, student in watchlist:
+                    print(f"#{student_id} {student['name']} | Attendance {student.get('attendance', 100)}%")
+            else:
+                print("No students currently need attendance support.")
+        elif choice == "9":
             save_data(DATA_FILE, students_dict)
             print("Data saved. Goodbye.")
             break
         else:
-            print("Please choose a number from 1 to 8.")
+            print("Please choose a number from 1 to 9.")
 
 
 if __name__ == "__main__":

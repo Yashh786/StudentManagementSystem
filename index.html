@@ -23,6 +23,12 @@
     @keyframes rise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} } @keyframes row-in { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width:850px) { .hero{grid-template-columns:1fr;padding-top:38px}.hero-note{justify-self:start}.workspace{grid-template-columns:1fr} } @media (max-width:620px) { .shell{width:min(100% - 24px,1240px)}.topbar{align-items:flex-start}.top-actions .button span{display:none}.stats{grid-template-columns:repeat(2,1fr)}.stat{min-height:105px}.stat-value{margin-top:8px;font-size:1.65rem}.records-toolbar{align-items:stretch;flex-wrap:wrap}.search{flex-basis:100%}h1{font-size:2.65rem} }
   </style>
+  <style>
+    .attendance { display:inline-flex; min-width:42px; justify-content:center; padding:4px 7px; border-radius:6px; color:var(--forest); background:var(--mint); font-weight:800; }
+    .attendance.mid { color:#8a6317; background:#fff2c9; }
+    .attendance.low { color:#a34535; background:#fbe6df; }
+    .support-filter { min-width:150px; }
+  </style>
 </head>
 <body>
   <div class="shell">
@@ -51,6 +57,85 @@
     $('student-form').addEventListener('submit',(event) => { event.preventDefault(); const id = $('sid').value.trim(); const values = {name:$('name').value.trim(),age:Number($('age').value),course:$('course').value.trim(),marks:{Math:Number($('math').value),Science:Number($('science').value),English:Number($('english').value)}}; if (!/^\d+$/.test(id) || !values.name || !values.course || !Number.isInteger(values.age) || values.age < 0 || Object.values(values.marks).some((mark) => !Number.isFinite(mark) || mark < 0 || mark > 100)) return notify('Check the form: IDs, details, and marks must be valid.','warning'); if (!editingId && students[id]) return notify('That student ID is already in use.','warning'); students[editingId || id] = values; persist(); notify(editingId ? 'Student record updated.' : 'Student added to the directory.'); resetForm(); render(); });
     $('clear-button').addEventListener('click',resetForm); $('search-input').addEventListener('input',render); $('grade-filter').addEventListener('change',render); $('sort-select').addEventListener('change',render); $('export-button').addEventListener('click',exportRecords); $('import-trigger').addEventListener('click',() => $('import-file').click()); $('import-file').addEventListener('change',(event) => importRecords(event.target.files[0])); $('close-dialog').addEventListener('click',() => $('detail-dialog').close()); $('students-tbody').addEventListener('click',(event) => { const action = event.target.dataset.action; const id = event.target.dataset.id; if (!action || !id) return; if (action === 'view') showDetails(id); if (action === 'edit') loadForm(id); if (action === 'delete' && window.confirm(`Remove ${students[id].name} from the directory?`)) { delete students[id]; persist(); render(); notify('Student record removed.'); } });
     const saved = localStorage.getItem('students_data'); if (saved) { try { students = JSON.parse(saved) || {}; } catch { students = {}; } } const hour = new Date().getHours(); $('date-label').textContent = `${new Intl.DateTimeFormat('en',{weekday:'long'}).format(new Date())}, ${hour < 12 ? 'good morning' : hour < 18 ? 'good afternoon' : 'good evening'}.`; render();
+  </script>
+  <script>
+    (function enhanceAttendance() {
+      const courseLabel = $('course').closest('label');
+      const attendanceLabel = document.createElement('label');
+      attendanceLabel.innerHTML = 'Attendance percentage<input id="attendance" required type="number" min="0" max="100" placeholder="e.g. 92" />';
+      courseLabel.after(attendanceLabel);
+
+      const gradeFilter = $('grade-filter');
+      const attendanceFilter = document.createElement('select');
+      attendanceFilter.id = 'attendance-filter';
+      attendanceFilter.className = 'support-filter';
+      attendanceFilter.setAttribute('aria-label', 'Filter by attendance');
+      attendanceFilter.innerHTML = '<option value="all">All attendance</option><option value="healthy">75%+ attendance</option><option value="risk">At risk</option>';
+      gradeFilter.after(attendanceFilter);
+
+      const header = document.createElement('th');
+      header.textContent = 'Attendance';
+      document.querySelector('thead tr').insertBefore(header, document.querySelector('thead th:last-child'));
+      const supportCard = document.querySelectorAll('.stat')[3];
+      supportCard.querySelector('.stat-label').textContent = 'Needs support';
+      supportCard.querySelector('.stat-detail').textContent = 'below 75% attendance';
+
+      const originalRender = render;
+      render = function renderWithAttendance() {
+        originalRender();
+        const filter = attendanceFilter.value;
+        let visibleCount = 0;
+        document.querySelectorAll('#students-tbody tr').forEach((row) => {
+          const action = row.querySelector('[data-id]');
+          const id = action && action.dataset.id;
+          const student = id && students[id];
+          if (!student) return;
+          const attendance = Number.isFinite(Number(student.attendance)) ? Number(student.attendance) : 100;
+          const matches = filter === 'all' || (filter === 'risk' ? attendance < 75 : attendance >= 75);
+          row.hidden = !matches;
+          if (matches) visibleCount += 1;
+          const cell = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = `attendance ${attendance < 75 ? 'low' : attendance < 85 ? 'mid' : ''}`;
+          badge.textContent = `${attendance}%`;
+          cell.appendChild(badge);
+          row.insertBefore(cell, row.lastElementChild);
+        });
+        if (filter !== 'all') $('record-count').textContent = `${visibleCount} matching attendance record${visibleCount === 1 ? '' : 's'}`;
+        const entries = Object.values(students);
+        const atRisk = entries.filter((student) => (Number.isFinite(Number(student.attendance)) ? Number(student.attendance) : 100) < 75).length;
+        supportCard.querySelector('.stat-value').textContent = atRisk;
+      };
+
+      const originalReset = resetForm;
+      resetForm = function resetFormWithAttendance() {
+        originalReset();
+        $('attendance').value = '';
+      };
+
+      let pendingAttendance = 100;
+      let pendingId = '';
+      $('student-form').addEventListener('submit', (event) => {
+        if (event.eventPhase === Event.CAPTURING_PHASE) return;
+        if (event.target !== $('student-form')) return;
+        window.setTimeout(() => {
+          if (pendingId && students[pendingId]) { students[pendingId].attendance = pendingAttendance; persist(); render(); }
+        }, 0);
+      });
+      $('student-form').addEventListener('submit', (event) => {
+        if (event.target !== $('student-form')) return;
+        const value = Number($('attendance').value);
+        pendingAttendance = Number.isFinite(value) && value >= 0 && value <= 100 ? value : 100;
+        pendingId = $('sid').value.trim();
+      }, true);
+      attendanceFilter.addEventListener('change', render);
+      const originalLoad = loadForm;
+      loadForm = function loadFormWithAttendance(id) { originalLoad(id); $('attendance').value = students[id]?.attendance ?? 100; };
+
+      const savedStudents = Object.entries(students).map(([id, student]) => [id, {...student, attendance: Number.isFinite(Number(student.attendance)) ? Number(student.attendance) : 100}]);
+      students = Object.fromEntries(savedStudents);
+      render();
+    }());
   </script>
 </body>
 </html>
