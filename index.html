@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#12251f" />
+  <meta name="description" content="A local-first student management workspace for records, marks, and attendance." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <title>Atlas Student Records</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -57,6 +60,7 @@
     $('student-form').addEventListener('submit',(event) => { event.preventDefault(); const id = $('sid').value.trim(); const values = {name:$('name').value.trim(),age:Number($('age').value),course:$('course').value.trim(),marks:{Math:Number($('math').value),Science:Number($('science').value),English:Number($('english').value)}}; if (!/^\d+$/.test(id) || !values.name || !values.course || !Number.isInteger(values.age) || values.age < 0 || Object.values(values.marks).some((mark) => !Number.isFinite(mark) || mark < 0 || mark > 100)) return notify('Check the form: IDs, details, and marks must be valid.','warning'); if (!editingId && students[id]) return notify('That student ID is already in use.','warning'); students[editingId || id] = values; persist(); notify(editingId ? 'Student record updated.' : 'Student added to the directory.'); resetForm(); render(); });
     $('clear-button').addEventListener('click',resetForm); $('search-input').addEventListener('input',render); $('grade-filter').addEventListener('change',render); $('sort-select').addEventListener('change',render); $('export-button').addEventListener('click',exportRecords); $('import-trigger').addEventListener('click',() => $('import-file').click()); $('import-file').addEventListener('change',(event) => importRecords(event.target.files[0])); $('close-dialog').addEventListener('click',() => $('detail-dialog').close()); $('students-tbody').addEventListener('click',(event) => { const action = event.target.dataset.action; const id = event.target.dataset.id; if (!action || !id) return; if (action === 'view') showDetails(id); if (action === 'edit') loadForm(id); if (action === 'delete' && window.confirm(`Remove ${students[id].name} from the directory?`)) { delete students[id]; persist(); render(); notify('Student record removed.'); } });
     const saved = localStorage.getItem('students_data'); if (saved) { try { students = JSON.parse(saved) || {}; } catch { students = {}; } } const hour = new Date().getHours(); $('date-label').textContent = `${new Intl.DateTimeFormat('en',{weekday:'long'}).format(new Date())}, ${hour < 12 ? 'good morning' : hour < 18 ? 'good afternoon' : 'good evening'}.`; render();
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   </script>
   <script>
     (function enhanceAttendance() {
@@ -137,5 +141,6 @@
       render();
     }());
   </script>
+  <script src="app-api.js"></script>
 </body>
 </html>

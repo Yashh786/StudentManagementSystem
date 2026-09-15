@@ -1,6 +1,6 @@
 # Atlas Student Records
 
-Atlas Student Records is a local-first student management system with a polished browser workspace and a matching Python command-line interface. It keeps the workflow simple: enter student details, review performance, and export the records when needed.
+Atlas Student Records is an authenticated student management system with a polished browser workspace, database-backed records, and a matching Python command-line interface.
 
 ## Features
 
@@ -13,14 +13,56 @@ Atlas Student Records is a local-first student management system with a polished
 - Filter the directory by healthy or at-risk attendance
 - View detailed student profiles in a modal dialog
 - Import and export compatible JSON files
-- Persist browser changes in localStorage
-- Use the same data model from the Python CLI
+- Secure account registration and login with hashed passwords
+- Per-user record ownership with CSRF-protected API mutations
+- SQLite development database with PostgreSQL-compatible production configuration
+- Offline app shell through a service worker without caching private API responses
 
 ## Run It
 
-### Browser workspace
+### Development setup
 
-Open `index.html` directly in a browser. No build step or server is required.
+Requires Python 3.13 or newer.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python -m flask --app app db upgrade
+python -m flask --app app run
+```
+
+Open `http://127.0.0.1:5000` and create an account. Run tests with:
+
+```powershell
+python -m pytest -q
+```
+
+### Deploy the browser app
+
+The application now requires the Flask server for authentication and database access. Deploy it with a production WSGI server, not Flask's development server:
+
+```powershell
+$env:FLASK_ENV="production"
+$env:SECRET_KEY="use-a-long-random-secret"
+$env:DATABASE_URL="postgresql+psycopg://user:password@host:5432/atlas"
+$env:COOKIE_SECURE="1"
+python -m flask --app app db upgrade
+waitress-serve --call app:create_app
+```
+
+Set the same values in the hosting provider's environment configuration. HTTPS is required when `COOKIE_SECURE=1`. SQLite is suitable for development or a single small deployment; PostgreSQL is recommended for real multi-user use.
+
+The browser still has an offline app shell, but private API responses are deliberately excluded from the service-worker cache.
+
+For a static-only preview of the visual shell:
+
+```powershell
+python -m http.server 8000
+```
+
+Then open `http://localhost:8000`. Authentication and database features require the Flask server.
 
 ### Python CLI
 
@@ -52,4 +94,4 @@ Records use a dictionary keyed by student ID:
 }
 ```
 
-The browser stores its working copy in localStorage. Use **Export records** to create a JSON file that can be imported by either interface.
+Use **Export records** to create a JSON backup. Web records are stored in the configured database and are scoped to the signed-in account.

@@ -1,0 +1,17 @@
+{
+  "name": "Atlas Student Records",
+  "short_name": "Atlas Records",
+  "description": "A local-first student management workspace for records, marks, and attendance.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f0",
+  "theme_color": "#12251f",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
