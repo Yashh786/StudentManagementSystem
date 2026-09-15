@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#12251f" />
+  <meta name="theme-color" content="#19383a" />
   <meta name="description" content="A local-first student management workspace for records, marks, and attendance." />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
@@ -31,6 +31,52 @@
     .attendance.mid { color:#8a6317; background:#fff2c9; }
     .attendance.low { color:#a34535; background:#fbe6df; }
     .support-filter { min-width:150px; }
+  </style>
+  <style>
+    :root { --ink:#1b292b; --ink-soft:#687779; --muted:#687779; --paper:#f2f1ec; --surface:#fbfbf8; --line:#d8ded9; --forest:#19383a; --green:#487f69; --mint:#e4eee8; --yellow:#d5aa50; --coral:#bb6859; --shadow:0 10px 30px rgba(27,41,43,.055); }
+    html { background:#f2f1ec; }
+    body { background:linear-gradient(135deg,#f2f1ec 0%,#f6f5f1 52%,#edf1ed 100%); color:var(--ink); }
+    .shell { width:min(1280px,calc(100% - 64px)); }
+    .topbar { padding:22px 0 17px; border-color:#cfd8d3; }
+    .brand-mark { width:36px; height:36px; border-radius:8px; background:var(--forest); }
+    .brand strong { letter-spacing:.1em; font-size:.78rem; }
+    .brand span { color:var(--muted); }
+    .button,.icon-button { border-color:#cfd8d3; border-radius:6px; padding:9px 13px; box-shadow:none; }
+    .button:hover,.icon-button:hover { border-color:var(--green); background:#f3f7f3; transform:none; }
+    .button.primary { background:var(--forest); border-color:var(--forest); }
+    .hero { gap:60px; padding:68px 0 42px; }
+    .eyebrow { color:var(--green); letter-spacing:.16em; }
+    h1 { max-width:680px; font-size:clamp(2.35rem,5vw,4.4rem); letter-spacing:-.065em; }
+    .hero-copy { max-width:520px; color:var(--muted); line-height:1.7; }
+    .hero-note { max-width:280px; padding:17px 0 17px 18px; border-left:2px solid var(--yellow); background:transparent; line-height:1.65; }
+    .stats { gap:0; margin-bottom:35px; border-top:1px solid #cfd8d3; border-bottom:1px solid #cfd8d3; }
+    .stat { min-height:112px; padding:20px 22px 18px 0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+    .stat + .stat { padding-left:22px; border-left:1px solid #cfd8d3; }
+    .stat-value { margin-top:9px; font-size:1.85rem; }
+    .stat-detail { color:var(--green); }
+    .workspace { grid-template-columns:315px 1fr; gap:28px; }
+    .panel { padding:24px; border:1px solid #d5ddd8; border-radius:8px; background:rgba(251,251,248,.82); box-shadow:var(--shadow); }
+    .panel-heading { margin-bottom:22px; }
+    h2 { font-size:1.02rem; letter-spacing:-.02em; }
+    .form-grid { gap:15px; }
+    label { color:#637174; font-size:.72rem; letter-spacing:.01em; }
+    input,select { padding:10px 11px; border-color:#d1d9d5; border-radius:5px; background:#fff; }
+    input:focus,select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(72,127,105,.12); }
+    .table-wrap { border-color:#d5ddd8; border-radius:6px; }
+    table { min-width:730px; }
+    th,td { padding:13px 12px; border-color:#e1e6e2; }
+    th { background:#f1f4f1; color:#667477; }
+    tbody tr:hover { background:#f1f6f2; }
+    .student-name { font-weight:700; color:#213437; }
+    .grade,.attendance { border-radius:4px; }
+    .row-action { border-radius:4px; }
+    .row-action:hover { color:var(--forest); background:var(--mint); }
+    .footer { padding-top:28px; }
+    .toast { border-radius:6px; box-shadow:0 10px 30px rgba(27,41,43,.12); }
+    dialog { border-radius:8px; box-shadow:0 20px 60px rgba(27,41,43,.18); }
+    dialog::backdrop { background:rgba(27,41,43,.22); }
+    @media (max-width:1000px) { .hero { gap:28px; } }
+    @media (max-width:620px) { .shell { width:min(100% - 28px,1280px); } .stats { grid-template-columns:repeat(2,1fr); } .stat { min-height:95px; padding:15px 12px 14px 0; } .stat + .stat { padding-left:12px; } .stat:nth-child(3) { border-left:0; padding-left:0; } .stat:nth-child(3),.stat:nth-child(4) { border-top:1px solid #cfd8d3; } }
   </style>
 </head>
 <body>
@@ -60,7 +106,7 @@
     $('student-form').addEventListener('submit',(event) => { event.preventDefault(); const id = $('sid').value.trim(); const values = {name:$('name').value.trim(),age:Number($('age').value),course:$('course').value.trim(),marks:{Math:Number($('math').value),Science:Number($('science').value),English:Number($('english').value)}}; if (!/^\d+$/.test(id) || !values.name || !values.course || !Number.isInteger(values.age) || values.age < 0 || Object.values(values.marks).some((mark) => !Number.isFinite(mark) || mark < 0 || mark > 100)) return notify('Check the form: IDs, details, and marks must be valid.','warning'); if (!editingId && students[id]) return notify('That student ID is already in use.','warning'); students[editingId || id] = values; persist(); notify(editingId ? 'Student record updated.' : 'Student added to the directory.'); resetForm(); render(); });
     $('clear-button').addEventListener('click',resetForm); $('search-input').addEventListener('input',render); $('grade-filter').addEventListener('change',render); $('sort-select').addEventListener('change',render); $('export-button').addEventListener('click',exportRecords); $('import-trigger').addEventListener('click',() => $('import-file').click()); $('import-file').addEventListener('change',(event) => importRecords(event.target.files[0])); $('close-dialog').addEventListener('click',() => $('detail-dialog').close()); $('students-tbody').addEventListener('click',(event) => { const action = event.target.dataset.action; const id = event.target.dataset.id; if (!action || !id) return; if (action === 'view') showDetails(id); if (action === 'edit') loadForm(id); if (action === 'delete' && window.confirm(`Remove ${students[id].name} from the directory?`)) { delete students[id]; persist(); render(); notify('Student record removed.'); } });
     const saved = localStorage.getItem('students_data'); if (saved) { try { students = JSON.parse(saved) || {}; } catch { students = {}; } } const hour = new Date().getHours(); $('date-label').textContent = `${new Intl.DateTimeFormat('en',{weekday:'long'}).format(new Date())}, ${hour < 12 ? 'good morning' : hour < 18 ? 'good afternoon' : 'good evening'}.`; render();
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js?v=3').catch(() => {});
   </script>
   <script>
     (function enhanceAttendance() {

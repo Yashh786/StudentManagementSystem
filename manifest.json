@@ -4,8 +4,8 @@
   "description": "A local-first student management workspace for records, marks, and attendance.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4f6f0",
-  "theme_color": "#12251f",
+  "background_color": "#f2f1ec",
+  "theme_color": "#19383a",
   "icons": [
     {
       "src": "icon.svg",
