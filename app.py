@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_from_directory, session
 from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, false
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,6 +42,7 @@ class Student(db.Model):
     age = db.Column(db.Integer, nullable=False)
     course = db.Column(db.String(120), nullable=False)
     attendance = db.Column(db.Float, nullable=False, default=100)
+    followed_up = db.Column(db.Boolean, nullable=False, default=False, server_default=false())
     math = db.Column(db.Float, nullable=False)
     science = db.Column(db.Float, nullable=False)
     english = db.Column(db.Float, nullable=False)
@@ -72,6 +73,7 @@ class Student(db.Model):
             "age": self.age,
             "course": self.course,
             "attendance": self.attendance,
+            "followed_up": self.followed_up,
             "marks": {"Math": self.math, "Science": self.science, "English": self.english},
             "average": round(self.average, 1),
             "grade": self.grade,
@@ -237,7 +239,7 @@ def create_app(test_config=None):
             return json_error(str(error))
         if Student.query.filter_by(owner_id=current_user.id, student_id=data["student_id"]).first():
             return json_error("That student ID is already in use.", 409)
-        record = Student(owner_id=current_user.id, **data)
+        record = Student(owner_id=current_user.id, followed_up=False, **data)
         db.session.add(record)
         db.session.commit()
         return jsonify(record.to_dict()), 201
@@ -269,6 +271,17 @@ def create_app(test_config=None):
         db.session.delete(record)
         db.session.commit()
         return jsonify({"deleted": True})
+
+    @app.post("/api/students/<student_id>/follow-up")
+    @auth_required
+    @csrf_required
+    def toggle_follow_up(student_id):
+        record = Student.query.filter_by(owner_id=current_user.id, student_id=student_id).first()
+        if not record:
+            return json_error("Student not found.", 404)
+        record.followed_up = not record.followed_up
+        db.session.commit()
+        return jsonify(record.to_dict())
 
     @app.post("/api/students/import")
     @auth_required

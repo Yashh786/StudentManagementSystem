@@ -1,6 +1,6 @@
 # Atlas Student Records
 
-Atlas Student Records is an authenticated student management system with a polished browser workspace, database-backed records, and a matching Python command-line interface.
+Atlas Student Records is an authenticated student management system with a polished browser workspace and database-backed records.
 
 ## Features
 
@@ -11,6 +11,7 @@ Atlas Student Records is an authenticated student management system with a polis
 - Filter by grade and see class-level statistics
 - Track attendance and identify students below the 75% support threshold
 - Filter the directory by healthy or at-risk attendance
+- Track follow-up actions for students needing support
 - View detailed student profiles in a modal dialog
 - Import and export compatible JSON files
 - Secure account registration and login with hashed passwords
@@ -55,43 +56,6 @@ waitress-serve --call app:create_app
 Set the same values in the hosting provider's environment configuration. HTTPS is required when `COOKIE_SECURE=1`. SQLite is suitable for development or a single small deployment; PostgreSQL is recommended for real multi-user use.
 
 The browser still has an offline app shell, but private API responses are deliberately excluded from the service-worker cache.
-
-For a static-only preview of the visual shell:
-
-```powershell
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000`. Authentication and database features require the Flask server.
-
-### Python CLI
-
-Requires Python 3.9 or newer.
-
-```powershell
-python StudentManagement.py
-```
-
-The CLI reads from and saves to `students_data.json` in the project directory.
-
-## Data Format
-
-Records use a dictionary keyed by student ID:
-
-```json
-{
-	"100": {
-		"name": "Demo Student",
-		"age": 18,
-		"course": "Computer Science",
-		"attendance": 92,
-		"marks": {
-			"Math": 85,
-			"Science": 82,
-			"English": 88
-		}
-	}
-}
 ```
 
 Use **Export records** to create a JSON backup. Web records are stored in the configured database and are scoped to the signed-in account.

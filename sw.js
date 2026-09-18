@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-records-v3';
+const CACHE_NAME = 'atlas-records-v4';
 const APP_SHELL = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {

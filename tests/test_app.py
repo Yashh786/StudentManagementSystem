@@ -76,3 +76,13 @@ def test_users_cannot_access_each_others_students(client):
     client.post("/api/auth/logout", headers={"X-CSRF-Token": csrf(client)})
     register(client, "second@example.com")
     assert client.get("/api/students").get_json()["students"] == {}
+
+
+def test_follow_up_status_is_persisted(client):
+    register(client)
+    token = csrf(client)
+    client.post("/api/students", json={**student_payload(), "attendance": 64}, headers={"X-CSRF-Token": token})
+    response = client.post("/api/students/101/follow-up", headers={"X-CSRF-Token": csrf(client)})
+    assert response.status_code == 200
+    assert response.get_json()["followed_up"] is True
+    assert client.get("/api/students").get_json()["students"]["101"]["followed_up"] is True

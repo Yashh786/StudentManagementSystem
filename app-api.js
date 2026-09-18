@@ -20,6 +20,10 @@
     .auth-error { min-height:18px; color:#a34535; font-size:.76rem; }
     .session-tools { display:flex; align-items:center; gap:9px; }
     .session-user { color:var(--muted); font-size:.76rem; }
+    .follow-up { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid #d6dfd9; border-radius:4px; color:var(--muted); background:transparent; font-size:.72rem; }
+    .follow-up:hover { border-color:var(--green); color:var(--forest); background:var(--mint); }
+    .follow-up.done { color:var(--green); border-color:#b9d3c4; background:var(--mint); }
+    .support-summary { color:var(--muted); font-size:.74rem; }
     @media (max-width:620px) { .session-user { display:none; } .auth-card { padding:24px; } }
   `;
   document.head.appendChild(style);
@@ -114,6 +118,39 @@
     }
   }
 
+  function decorateFollowUps() {
+    const headerRow = document.querySelector('thead tr');
+    if (headerRow && !headerRow.querySelector('.follow-up-heading')) {
+      const header = document.createElement('th');
+      header.className = 'follow-up-heading';
+      header.textContent = 'Follow-up';
+      headerRow.appendChild(header);
+    }
+    const records = Object.values(students);
+    const pending = records.filter((student) => Number(student.attendance) < 75 && !student.followed_up).length;
+    const supportCard = document.querySelectorAll('.stat')[3];
+    if (supportCard) {
+      supportCard.querySelector('.stat-label').textContent = 'Follow-up queue';
+      supportCard.querySelector('.stat-value').textContent = pending;
+      supportCard.querySelector('.stat-detail').textContent = pending ? 'students still needing contact' : 'all support actions handled';
+    }
+    document.querySelectorAll('#students-tbody tr').forEach((row) => {
+      const action = row.querySelector('[data-id]');
+      const id = action && action.dataset.id;
+      const student = id && students[id];
+      if (!student || row.querySelector('.follow-up')) return;
+      const cell = document.createElement('td');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `follow-up ${student.followed_up ? 'done' : ''}`;
+      button.dataset.action = 'follow-up';
+      button.dataset.id = id;
+      button.textContent = student.followed_up ? 'Contacted' : 'Mark contacted';
+      cell.appendChild(button);
+      row.appendChild(cell);
+    });
+  }
+
   async function submitStudent(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -131,6 +168,14 @@
   async function deleteStudent(id) {
     if (!students[id] || !window.confirm(`Remove ${students[id].name} from the directory?`)) return;
     try { await api(`/api/students/${encodeURIComponent(id)}`, { method: 'DELETE' }); await loadStudents(); notify('Student record removed.'); } catch (error) { notify(error.message, 'danger'); }
+  }
+
+  async function toggleFollowUp(id) {
+    try {
+      await api(`/api/students/${encodeURIComponent(id)}/follow-up`, { method: 'POST' });
+      await loadStudents();
+      notify(students[id]?.followed_up ? 'Student marked as contacted.' : 'Student returned to the follow-up queue.');
+    } catch (error) { notify(error.message, 'danger'); }
   }
 
   async function importFile(file) {
@@ -178,6 +223,7 @@
     if (action === 'view') showDetails(id);
     if (action === 'edit') loadForm(id);
     if (action === 'delete') deleteStudent(id);
+    if (action === 'follow-up') toggleFollowUp(id);
   }, true);
   ['search-input', 'grade-filter', 'sort-select', 'attendance-filter'].forEach((id) => {
     const element = $(id);
@@ -187,6 +233,12 @@
   $('export-button').addEventListener('click', (event) => { event.stopImmediatePropagation(); exportRecordsFromApi(); }, true);
   $('import-trigger').addEventListener('click', (event) => { event.stopImmediatePropagation(); $('import-file').click(); }, true);
   $('import-file').addEventListener('change', (event) => { event.stopImmediatePropagation(); importFile(event.target.files[0]); event.target.value = ''; }, true);
+
+  const originalRender = render;
+  render = function renderWithFollowUps() {
+    originalRender();
+    decorateFollowUps();
+  };
 
   (async function initialize() {
     try {
